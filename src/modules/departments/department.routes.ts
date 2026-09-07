@@ -23,5 +23,11 @@ router.patch(
   validate({ body: updateDepartmentSchema }),
   departmentController.update,
 );
+router.delete(
+  "/:id",
+  authenticate,
+  authorize(Role.ADMIN),
+  departmentController.softDelete,
+);
 
 export default router;

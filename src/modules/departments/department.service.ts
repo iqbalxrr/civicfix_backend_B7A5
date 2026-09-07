@@ -77,3 +77,22 @@ export const updateDepartment = async (
   });
   return department;
 };
+
+
+export const softDeleteDepartment = async (id: string, actorId: string) => {
+  const existing = await prisma.department.findFirst({ where: { id, deletedAt: null } });
+  if (!existing) throw new ApiError(404, "Department not found");
+
+  const department = await prisma.department.update({
+    where: { id },
+    data: { deletedAt: new Date(), isActive: false },
+  });
+  await cacheDel(CACHE_KEY);
+  await createAuditLog({
+    actorId,
+    action: "DEPARTMENT_SOFT_DELETED",
+    entityType: "Department",
+    entityId: id,
+  });
+  return department;
+};
