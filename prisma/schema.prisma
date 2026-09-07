@@ -1,0 +1,245 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CITIZEN
+  STAFF
+  ADMIN
+}
+
+enum ComplaintStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  REJECTED
+  CANCELLED
+}
+
+enum Priority {
+  STANDARD
+  PRIORITY
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String?
+  name         String
+  phone        String?
+  role         Role      @default(CITIZEN)
+  googleId     String?   @unique
+  avatarUrl    String?
+  address      String?
+  isActive     Boolean   @default(true)
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  complaintsSubmitted Complaint[]      @relation("CitizenComplaints")
+  complaintsAssigned  Complaint[]      @relation("AssignedStaff")
+  complaintUpdates    ComplaintUpdate[]
+  refreshTokens       RefreshToken[]
+  auditLogs           AuditLog[]
+  payments            Payment[]
+  feedbacks           Feedback[]
+
+  @@index([role])
+  @@index([departmentId])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+model Department {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  code        String     @unique
+  description String?
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  deletedAt   DateTime?
+
+  staff      User[]
+  categories Category[]
+  complaints Complaint[]
+
+  @@index([deletedAt])
+  @@map("departments")
+}
+
+model Category {
+  id           String     @id @default(cuid())
+  name         String
+  slug         String     @unique
+  description  String?
+  slaHours     Int        @default(72)
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime?
+
+  complaints Complaint[]
+
+  @@index([departmentId])
+  @@index([deletedAt])
+  @@map("categories")
+}
+
+model Complaint {
+  id             String          @id @default(cuid())
+  trackingId     String          @unique
+  title          String
+  description    String
+  status         ComplaintStatus @default(SUBMITTED)
+  priority       Priority        @default(STANDARD)
+  location       String
+  latitude       Float?
+  longitude      Float?
+  citizenId      String
+  citizen        User            @relation("CitizenComplaints", fields: [citizenId], references: [id])
+  categoryId     String
+  category       Category        @relation(fields: [categoryId], references: [id])
+  departmentId   String
+  department     Department      @relation(fields: [departmentId], references: [id])
+  assignedToId   String?
+  assignedTo     User?           @relation("AssignedStaff", fields: [assignedToId], references: [id])
+  slaDueAt       DateTime
+  resolvedAt     DateTime?
+  rejectionReason String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  deletedAt      DateTime?
+
+  updates     ComplaintUpdate[]
+  attachments Attachment[]
+  feedback    Feedback?
+  payments    Payment[]
+
+  @@index([status])
+  @@index([priority])
+  @@index([citizenId])
+  @@index([assignedToId])
+  @@index([departmentId])
+  @@index([categoryId])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@index([slaDueAt])
+  @@map("complaints")
+}
+
+model ComplaintUpdate {
+  id          String           @id @default(cuid())
+  complaintId String
+  complaint   Complaint        @relation(fields: [complaintId], references: [id])
+  actorId     String
+  actor       User             @relation(fields: [actorId], references: [id])
+  fromStatus  ComplaintStatus?
+  toStatus    ComplaintStatus?
+  note        String?
+  createdAt   DateTime         @default(now())
+
+  @@index([complaintId])
+  @@index([actorId])
+  @@map("complaint_updates")
+}
+
+model Attachment {
+  id           String    @id @default(cuid())
+  complaintId  String
+  complaint    Complaint @relation(fields: [complaintId], references: [id])
+  url          String
+  publicId     String?
+  mimeType     String?
+  originalName String?
+  createdAt    DateTime  @default(now())
+
+  @@index([complaintId])
+  @@map("attachments")
+}
+
+model Feedback {
+  id          String    @id @default(cuid())
+  complaintId String    @unique
+  complaint   Complaint @relation(fields: [complaintId], references: [id])
+  citizenId   String
+  citizen     User      @relation(fields: [citizenId], references: [id])
+  rating      Int
+  comment     String?
+  createdAt   DateTime  @default(now())
+
+  @@index([citizenId])
+  @@map("feedbacks")
+}
+
+model Payment {
+  id                    String        @id @default(cuid())
+  complaintId           String
+  complaint             Complaint     @relation(fields: [complaintId], references: [id])
+  citizenId             String
+  citizen               User          @relation(fields: [citizenId], references: [id])
+  amount                Decimal       @db.Decimal(10, 2)
+  currency              String        @default("BDT")
+  status                PaymentStatus @default(PENDING)
+  merchantInvoiceNumber String        @unique
+  bkashPaymentId        String?       @unique
+  trxId                 String?
+  bkashResponse         Json?
+  paidAt                DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  @@index([complaintId])
+  @@index([citizenId])
+  @@index([status])
+  @@map("payments")
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id])
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId])
+  @@index([entityType])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
