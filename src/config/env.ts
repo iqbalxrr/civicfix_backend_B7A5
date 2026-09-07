@@ -14,6 +14,7 @@ const envSchema = z.object({
   JWT_ACCESS_EXPIRES_IN: z.string().default("15m"),
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
   GOOGLE_CLIENT_ID: z.preprocess((v) => (v === "" ? undefined : v), z.string().optional()),
+  GOOGLE_CLIENT_SECRET: z.preprocess((v) => (v === "" ? undefined : v), z.string().optional()),
   BKASH_USERNAME: z.preprocess((v) => (v === "" ? undefined : v), z.string().optional()),
   BKASH_PASSWORD: z.preprocess((v) => (v === "" ? undefined : v), z.string().optional()),
   BKASH_APP_KEY: z.preprocess((v) => (v === "" ? undefined : v), z.string().optional()),
