@@ -115,3 +115,22 @@ export const updateCategory = async (
   });
   return category;
 };
+
+
+export const softDeleteCategory = async (id: string, actorId: string) => {
+  const existing = await prisma.category.findFirst({ where: { id, deletedAt: null } });
+  if (!existing) throw new ApiError(404, "Category not found");
+
+  const category = await prisma.category.update({
+    where: { id },
+    data: { deletedAt: new Date(), isActive: false },
+  });
+  await cacheDel(CACHE_KEY);
+  await createAuditLog({
+    actorId,
+    action: "CATEGORY_SOFT_DELETED",
+    entityType: "Category",
+    entityId: id,
+  });
+  return category;
+};

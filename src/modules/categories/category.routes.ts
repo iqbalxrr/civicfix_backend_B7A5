@@ -24,4 +24,12 @@ router.patch(
   categoryController.update,
 );
 
+router.delete(
+  "/:id",
+  authenticate,
+  authorize(Role.ADMIN),
+  categoryController.softDelete,
+);
+
 export default router;
+

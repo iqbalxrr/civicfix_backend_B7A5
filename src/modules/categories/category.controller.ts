@@ -23,3 +23,9 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
   const data = await categoryService.updateCategory(req.params.id, req.body, req.user!.id);
   return sendSuccess(res, data, "Category updated");
 });
+
+
+export const softDelete = asyncHandler(async (req: Request, res: Response) => {
+  const data = await categoryService.softDeleteCategory(req.params.id, req.user!.id);
+  return sendSuccess(res, data, "Category soft-deleted");
+});
