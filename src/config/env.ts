@@ -3,11 +3,24 @@ import { z } from "zod";
 
 dotenv.config();
 
+const vercelFallbackUrl = process.env.VERCEL_URL
+  ? `https://${process.env.VERCEL_URL}`
+  : undefined;
+
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PORT: z.coerce.number().default(5000),
-  BASE_URL: z.string().url(),
-  CLIENT_URL: z.string().url().default("http://localhost:3000"),
+  BASE_URL: z.preprocess(
+    (v) => (typeof v === "string" && v.length > 0 ? v : vercelFallbackUrl),
+    z.string().url(),
+  ),
+  CLIENT_URL: z.preprocess(
+    (v) =>
+      typeof v === "string" && v.length > 0
+        ? v
+        : vercelFallbackUrl || "http://localhost:3000",
+    z.string().url(),
+  ),
   DATABASE_URL: z.string().min(1),
   JWT_ACCESS_SECRET: z.string().min(16),
   JWT_REFRESH_SECRET: z.string().min(16),
@@ -23,9 +36,9 @@ const envSchema = z.object({
     .string()
     .default("https://tokenized.sandbox.bka.sh/v1.2.0-beta"),
   REDIS_URL: z.preprocess((v) => (v === "" ? undefined : v), z.string().optional()),
-  CLOUDINARY_CLOUD_NAME: z.string().optional(),
-  CLOUDINARY_API_KEY: z.string().optional(),
-  CLOUDINARY_API_SECRET: z.string().optional(),
+  CLOUDINARY_CLOUD_NAME: z.preprocess((v) => (v === "" ? undefined : v), z.string().optional()),
+  CLOUDINARY_API_KEY: z.preprocess((v) => (v === "" ? undefined : v), z.string().optional()),
+  CLOUDINARY_API_SECRET: z.preprocess((v) => (v === "" ? undefined : v), z.string().optional()),
   PRIORITY_FEE_BDT: z.coerce.number().default(50),
 });
 
