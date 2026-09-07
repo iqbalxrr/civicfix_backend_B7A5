@@ -130,9 +130,20 @@ Required: `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `BASE_URL`,
 
 Optional Redis: Upstash → set `REDIS_URL`.
 
-## Postman
+## API Docs (Swagger UI)
 
-Import [`postman/CivicFix_API.postman_collection.json`](postman/CivicFix_API.postman_collection.json).
+After deploy / local run:
+
+- Swagger UI: `https://civicfix-backend-b7a5.vercel.app/api-docs`
+- OpenAPI JSON: `https://civicfix-backend-b7a5.vercel.app/api-docs.json`
+
+Local: `http://localhost:5000/api-docs`
+
+Demo login in Swagger:
+1. `POST /api/v1/auth/login` with `admin@civicfix.com` / `Admin@12345`
+2. Copy `accessToken`
+3. Click **Authorize** → `Bearer <token>`
+4. Try protected endpoints
 
 ## Submission Template
 

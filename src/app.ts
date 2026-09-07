@@ -3,6 +3,7 @@ import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import { env } from "./config/env";
+import { setupSwagger } from "./docs/swagger";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
 import authRoutes from "./modules/auth/auth.routes";
 import userRoutes from "./modules/users/user.routes";
@@ -17,10 +18,15 @@ const app = express();
 
 app.set("trust proxy", 1);
 
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  }),
+);
 app.use(
   cors({
-    origin: env.CLIENT_URL,
+    origin: true,
     credentials: true,
   }),
 );
@@ -55,11 +61,14 @@ app.get("/", (_req, res) => {
     message: "Welcome to CivicFix - City Complaint & Service Platform API",
     data: {
       version: "v1",
-      docs: "/api/v1",
+      docs: "/api-docs",
+      openapi: "/api-docs.json",
       health: "/health",
     },
   });
 });
+
+setupSwagger(app);
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
