@@ -9,3 +9,8 @@ coverage/
 .vscode/
 .idea/
 .vercel
+
+.deploy_chunks/
+.vercel_deploy_args.json
+.vercel-home/
+.env.cloud.bak
